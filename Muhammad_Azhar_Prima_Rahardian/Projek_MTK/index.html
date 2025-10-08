@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kalkulator Biner & Desimal dengan Tombol & History</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 400px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #f7f9fc;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #ccc;
+  }
+  h2 {
+    text-align: center;
+  }
+  .mode-switch {
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  button.mode-btn {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    background-color: #7a7a7a;
+    color: rgb(255, 255, 255);
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button.mode-btn.active {
+    background-color: #000000;
+  }
+  #display {
+    width: 100%;
+    height: 40px;
+    font-size: 30px;
+    padding: 5px 10px;
+    text-align: right;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  #result {
+    background: #e0f7fa;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 40px;
+    margin-bottom: 15px;
+    font-weight: bold;
+  }
+  #history {
+    background: #fff3e0;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 14px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+  }
+  .history-item {
+    margin-bottom: 5px;
+    border-bottom: 1px dotted #ccc;
+    padding-bottom: 3px;
+  }
+  #clearHistoryBtn {
+    background: #ff5722;
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    width: 100%;
+    font-weight: bold;
+  }
+  #clearHistoryBtn:hover {
+    background: #e64a19;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  button.calc-btn {
+    padding: 15px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+  }
+  button.calc-btn:hover {
+    background: #0056b3;
+  }
+  button.calc-btn.disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<h2>Kalkulator Biner & Desimal</h2>
+
+<div class="mode-switch">
+  <button id="modeBin2Dec" class="mode-btn active"><b>Biner → Desimal</b></button>
+  <button id="modeDec2Bin" class="mode-btn"><b>Desimal → Biner</b></button>
+</div>
+
+<input type="text" id="display" placeholder="Input angka" readonly />
+<div id="result">Hasil akan muncul di sini...</div>
+<div id="history"><b>History:</b><br /><em>Belum ada riwayat.</em></div>
+<button id="clearHistoryBtn">Clear History</button>
+
+<div class="buttons" id="buttonsContainer">
+  <!-- Tombol-tombol angka dan kontrol akan dibuat dinamis -->
+</div>
+
+<script>
+  const modeBin2Dec = document.getElementById('modeBin2Dec');
+  const modeDec2Bin = document.getElementById('modeDec2Bin');
+  const display = document.getElementById('display');
+  const result = document.getElementById('result');
+  const buttonsContainer = document.getElementById('buttonsContainer');
+  const historyContainer = document.getElementById('history');
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+  let currentMode = 'bin2dec';
+  let history = [];
+
+  function renderButtons() {
+    buttonsContainer.innerHTML = '';
+    let buttons = [];
+
+    if (currentMode === 'bin2dec') {
+      buttons = ['1', '0', 'C', 'DEL'];
+    } else {
+      buttons = ['7', '8', '9', 'C',
+                 '4', '5', '6', 'DEL',
+                 '1', '2', '3', '0'];
+    }
+
+    buttons.forEach(btnText => {
+      const btn = document.createElement('button');
+      btn.textContent = btnText;
+      btn.className = 'calc-btn';
+      if ((currentMode === 'bin2dec' && !['0','1','C','DEL'].includes(btnText)) ||
+          (currentMode === 'dec2bin' && !['0','1','2','3','4','5','6','7','8','9','C','DEL'].includes(btnText))) {
+        btn.classList.add('disabled');
+        btn.disabled = true;
+      }
+      btn.addEventListener('click', () => handleButtonClick(btnText));
+      buttonsContainer.appendChild(btn);
+    });
+  }
+
+  function handleButtonClick(value) {
+    if (value === 'C') {
+      display.value = '';
+      result.textContent = 'Hasil akan muncul di sini...';
+      return;
+    }
+    if (value === 'DEL') {
+      display.value = display.value.slice(0, -1);
+      updateResult();
+      return;
+    }
+
+    display.value += value;
+    updateResult();
+  }
+
+  function updateResult() {
+    const input = display.value;
+
+    if (input.length === 0) {
+      result.textContent = 'Hasil akan muncul di sini...';
+      return;
+    }
+
+    if (currentMode === 'bin2dec') {
+      if (!/^[01]+$/.test(input)) {
+        result.textContent = '❌ Input harus biner (0 dan 1)';
+        return;
+      }
+      const desimal = parseInt(input, 2);
+      result.textContent = `✅ Desimal: ${desimal}`;
+      updateHistory(`Biner: ${input} → Desimal: ${desimal}`);
+    } else {
+      if (!/^\d+$/.test(input)) {
+        result.textContent = '❌ Input harus angka desimal (0-9)';
+        return;
+      }
+      const desimal = parseInt(input, 10);
+      const biner = desimal.toString(2);
+      result.textContent = `✅ Biner: ${biner}`;
+      updateHistory(`Desimal: ${input} → Biner: ${biner}`);
+    }
+  }
+
+  function updateHistory(entry) {
+    if (history.length === 0 || history[history.length - 1] !== entry) {
+      history.push(entry);
+      renderHistory();
+    }
+  }
+
+  function renderHistory() {
+    if (history.length === 0) {
+      historyContainer.innerHTML = '<b>History:</b><br /><em>Belum ada riwayat.</em>';
+      return;
+    }
+    const items = history.map(item => `<div class="history-item">${item}</div>`).join('');
+    historyContainer.innerHTML = `<b>History:</b><br />${items}`;
+    historyContainer.scrollTop = historyContainer.scrollHeight;
+  }
+
+  clearHistoryBtn.addEventListener('click', () => {
+    history = [];
+    renderHistory();
+  });
+
+  modeBin2Dec.addEventListener('click', () => {
+    currentMode = 'bin2dec';
+    modeBin2Dec.classList.add('active');
+    modeDec2Bin.classList.remove('active');
+    display.value = '';
+    result.textContent = 'Hasil akan muncul di sini...';
+    renderButtons();
+  });
+
+  modeDec2Bin.addEventListener('click', () => {
+    currentMode = 'dec2bin';
+    modeDec2Bin.classList.add('active');
+    modeBin2Dec.classList.remove('active');
+    display.value = '';
+    result.textContent = 'Hasil akan muncul di sini...';
+    renderButtons();
+  });
+
+  renderButtons();
+</script>
+
+</body>
+</html>
